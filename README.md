@@ -44,7 +44,7 @@ Vercel Hobby(무료)는 비상업용입니다. 유료화하면 Pro가 필요합�
 ## 개발
 
 ```bash
-npm test          # vitest 62개: 채점기, 규칙 해석, 템플릿, 소스 변환, LLM 응답 처리, API
+npm test          # vitest 67개: 채점기, 규칙 해석, 템플릿, 소스 변환, LLM 응답 처리, API
 npm run lint
 npm run build
 ```

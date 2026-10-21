@@ -67,6 +67,23 @@ describe("API (키 없음, 샘플)", () => {
     expect(r.data.needManual).toBe(true);
   });
 
+  it("사이트가 429로 막으면 이유를 설명하고 직접 설명을 요청한다", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("Too Many Requests", { status: 429 })));
+    const r = await call<{ error: string; needManual: boolean }>(productPOST, { url: "http://93.184.215.14/products/1?NaPm=abc" });
+    expect(r.status).toBe(422);
+    expect(r.data.needManual).toBe(true);
+    expect(r.data.error).toMatch(/429/);
+  });
+
+  it("직접 설명으로 만든 프로필의 링크에는 추적 꼬리표가 없다", async () => {
+    const r = await call<{ profile: ProductProfile }>(productPOST, {
+      url: "https://smartstore.naver.com/fresys/products/13523554387?site_preference=device&NaPm=ct%3Dx",
+      manual: { name: "Fresys", description: "Fresh salad delivered every morning\n- picked the same day\n- no plastic packaging" },
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.profile.url).toBe("https://smartstore.naver.com/fresys/products/13523554387");
+  });
+
   it("붙여넣기 수집", async () => {
     const r = await call<CollectResult>(collectPOST, {
       community: { platform: "reddit", id: "pasted-selfhosted", label: "r/selfhosted" },

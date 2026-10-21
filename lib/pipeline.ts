@@ -18,7 +18,16 @@ import { templateDrafts } from "./generate/templates";
 import { LLMError, generateJSON, llmConfig } from "./llm/provider";
 import { WRITER_SYSTEM, draftsPrompt, playbookPrompt, profilePrompt, shortsPrompt } from "./llm/prompts";
 import { DraftsSchema, PlaybookSchema, ProfileSchema, ShortsSchema } from "./llm/schemas";
-import { FetchError, extractPage, fetchPage, heuristicProfile, manualProfile, pageDigest } from "./sources/product";
+import {
+  FetchError,
+  cleanProductUrl,
+  extractPage,
+  fetchPage,
+  heuristicProfile,
+  isEmptyPage,
+  manualProfile,
+  pageDigest,
+} from "./sources/product";
 
 export interface Notice {
   noticeKo?: string;
@@ -29,11 +38,12 @@ function llmNotice(e: unknown, what: string): string {
   return `${what}에 LLM을 쓰지 못해서(${reason}) 규칙 기반 결과를 보여 줘요`;
 }
 
-export async function buildProfile(input: {
+export async function buildProfile(raw: {
   url?: string;
   manual?: { name: string; description: string };
   useLLM: boolean;
 }): Promise<{ profile: ProductProfile } & Notice> {
+  const input = { ...raw, url: raw.url ? cleanProductUrl(raw.url) : raw.url };
   if (input.url && isSampleUrl(input.url)) return { profile: SAMPLE_PRODUCT };
 
   if (input.manual) {
@@ -56,7 +66,13 @@ export async function buildProfile(input: {
 
   if (!input.url) throw new FetchError("no url", "제품 URL을 넣어 주세요.");
   const { html, finalUrl } = await fetchPage(input.url);
-  const page = extractPage(html, input.url, finalUrl);
+  const page = extractPage(html, input.url, cleanProductUrl(finalUrl));
+  if (isEmptyPage(page)) {
+    throw new FetchError(
+      "empty page",
+      "페이지는 열렸는데 읽을 내용이 거의 없어요. 자바스크립트로 화면을 그리는 사이트일 수 있어요. 아래에 제품 설명을 직접 넣어 주세요.",
+    );
+  }
   const base = heuristicProfile(page);
   if (!input.useLLM || llmConfig().provider === "none") return { profile: base };
   try {

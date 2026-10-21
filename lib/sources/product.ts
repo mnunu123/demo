@@ -75,6 +75,37 @@ export async function assertPublicUrl(raw: string): Promise<URL> {
 
 const MAX_BYTES = 1_500_000;
 
+// 광고·추적용 꼬리표. 초안에 들어갈 제품 링크에서 뺀다 (utm 같은 꼬리표는 광고 냄새로 잡힌다)
+const TRACKING_PARAM = /^(utm_\w+|napm|fbclid|gclid|gbraid|wbraid|yclid|msclkid|igshid|mc_cid|mc_eid|_ga|_gl|ref|ref_src|site_preference|nacn|n_media|n_query|n_rank|n_ad_group|n_ad|n_campaign_type|n_keyword_id|n_keyword|n_ad_group_type|n_match)$/i;
+
+/** 제품 링크에서 추적용 꼬리표를 지운다. 해석이 안 되면 그대로 돌려준다 */
+export function cleanProductUrl(raw: string): string {
+  const trimmed = raw.trim();
+  try {
+    const u = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
+    for (const key of [...u.searchParams.keys()]) if (TRACKING_PARAM.test(key)) u.searchParams.delete(key);
+    u.hash = "";
+    return u.toString().replace(/\?$/, "");
+  } catch {
+    return trimmed;
+  }
+}
+
+/** 응답 코드별로 무슨 일인지와 다음에 할 일을 알려 준다 */
+export function statusMessageKo(status: number, host: string): string {
+  const site = host.replace(/^(www|m)\./, "");
+  const shop = /(^|\.)(smartstore\.naver\.com|brand\.naver\.com|shopping\.naver\.com|coupang\.com)$/.test(site);
+  if (status === 429)
+    return shop
+      ? `${site}가 서버에서 오는 접속을 막았어요(429). 네이버 스마트스토어처럼 봇 차단이 강한 쇼핑몰은 서버가 페이지를 읽을 수 없어요. 아래에 제품 설명을 직접 넣어 주세요.`
+      : `${site}가 접속을 막았어요(429, 요청이 너무 많다는 응답). 처음 요청부터 이러면 서버에서 오는 봇 접속을 막는 사이트예요. 아래에 제품 설명을 직접 넣어 주세요.`;
+  if (status === 401 || status === 403)
+    return `${site}가 접속을 거부했어요(${status}). 로그인이 필요하거나 봇 접속을 막는 페이지예요. 아래에 제품 설명을 직접 넣어 주세요.`;
+  if (status === 404 || status === 410) return `페이지를 찾을 수 없어요(${status}). 주소를 다시 확인하거나 제품 설명을 직접 넣어 주세요.`;
+  if (status >= 500) return `${site} 서버가 오류를 냈어요(${status}). 잠시 뒤 다시 시도하거나 제품 설명을 직접 넣어 주세요.`;
+  return `페이지가 ${status} 응답을 돌려줬어요. 제품 설명을 직접 넣어 주세요.`;
+}
+
 export async function fetchPage(rawUrl: string, timeoutMs = 8000): Promise<{ html: string; finalUrl: string }> {
   let current = await assertPublicUrl(rawUrl);
   for (let hop = 0; hop < 4; hop++) {
@@ -98,7 +129,7 @@ export async function fetchPage(rawUrl: string, timeoutMs = 8000): Promise<{ htm
       current = await assertPublicUrl(new URL(loc, current).toString());
       continue;
     }
-    if (!res.ok) throw new FetchError(`status ${res.status}`, `페이지가 ${res.status} 오류를 돌려줬어요.`);
+    if (!res.ok) throw new FetchError(`status ${res.status}`, statusMessageKo(res.status, current.hostname));
     const type = res.headers.get("content-type") ?? "";
     if (!/text\/html|application\/xhtml/.test(type)) throw new FetchError("not html", "HTML 페이지가 아니에요.");
     const reader = res.body?.getReader();
@@ -325,6 +356,12 @@ export function manualProfile(input: { url?: string; name: string; description: 
     lang: hasHangul(input.description) ? "ko" : "en",
   };
   return { ...heuristicProfile(fakePage), name: input.name, source: "manual" };
+}
+
+/** 자바스크립트로 그리는 페이지처럼 서버가 받은 HTML에 내용이 거의 없는 경우 */
+export function isEmptyPage(page: PageExtract): boolean {
+  const words = [page.title, page.description, ...page.headings, ...page.paragraphs].join(" ").trim().split(/\s+/).filter(Boolean);
+  return words.length < 4;
 }
 
 /** LLM에 넘길 페이지 요약 텍스트 */

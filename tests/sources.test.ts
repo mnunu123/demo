@@ -5,7 +5,7 @@ import { mapRedditPost } from "@/lib/sources/reddit";
 import { decodeHnHtml, mapHnHit } from "@/lib/sources/hn";
 import { mapTweet } from "@/lib/sources/x";
 import { parsePasted, parseRules } from "@/lib/sources/paste";
-import { assertPublicUrl, extractPage, firstSentence, heuristicProfile } from "@/lib/sources/product";
+import { assertPublicUrl, cleanProductUrl, extractPage, firstSentence, heuristicProfile, isEmptyPage, statusMessageKo } from "@/lib/sources/product";
 import { generateJSON } from "@/lib/llm/provider";
 import { DraftsSchema, ProfileSchema } from "@/lib/llm/schemas";
 
@@ -82,6 +82,24 @@ describe("제품 페이지 추출", () => {
     expect(firstSentence("A tool for developers, businesses, and the largest open source communities in the world to build software together", 60)).toBe(
       "A tool for developers, businesses, and the largest open",
     );
+  });
+  it("추적용 꼬리표를 지운다", () => {
+    expect(
+      cleanProductUrl(
+        "https://smartstore.naver.com/fresys/products/13523554387?site_preference=device&NaPm=ct%3Dmvhk9teo%7Cci%3Dshopn",
+      ),
+    ).toBe("https://smartstore.naver.com/fresys/products/13523554387");
+    expect(cleanProductUrl("https://a.dev/app?utm_source=x&plan=pro#top")).toBe("https://a.dev/app?plan=pro");
+    expect(cleanProductUrl("a.dev")).toBe("https://a.dev/");
+  });
+  it("막힌 이유를 응답 코드로 설명한다", () => {
+    expect(statusMessageKo(429, "smartstore.naver.com")).toMatch(/스마트스토어.*직접/);
+    expect(statusMessageKo(403, "www.example.com")).toMatch(/example\.com.*403/);
+    expect(statusMessageKo(404, "a.dev")).toMatch(/찾을 수 없어요/);
+  });
+  it("내용이 거의 없는 페이지(자바스크립트로 그리는 페이지)를 알아챈다", () => {
+    expect(isEmptyPage(extractPage("<html><body><div id=root></div><script>app()</script></body></html>", "https://a.dev"))).toBe(true);
+    expect(isEmptyPage(page)).toBe(false);
   });
   it("내부 주소는 막는다", async () => {
     await expect(assertPublicUrl("http://localhost:3000")).rejects.toThrow();

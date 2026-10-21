@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 const Body = z.object({
   url: z.string().max(500).optional(),
-  manual: z.object({ name: z.string().min(1).max(120), description: z.string().min(10).max(4000) }).optional(),
+  manual: z.object({ name: z.string().min(1).max(120), description: z.string().min(10).max(8000) }).optional(),
 });
 
 export async function POST(req: Request) {

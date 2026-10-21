@@ -125,7 +125,7 @@ lib/
   server/guard.ts          접근 코드, 사용량 제한, JSON 응답
   server/schemas.ts        API 요청 검증
   client/                  api(fetch, 저장), marks(편집기 표시 계산)
-tests/                     vitest 62개 (엔진, 소스 변환, LLM 응답 처리, API)
+tests/                     vitest 67개 (엔진, 소스 변환, LLM 응답 처리, API)
 ```
 
 ## 4. API 명세

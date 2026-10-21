@@ -574,7 +574,9 @@ function ManualForm({ error, onSubmit }: { error: string; onSubmit: (m: { name: 
       }}
     >
       <p className="text-[15px]">{error}</p>
-      <p className="mt-1 text-[14px] text-ink-soft">대신 제품을 직접 설명해 주세요. 영어로 쓰면 초안 품질이 좋아요.</p>
+      <p className="mt-1 text-[14px] text-ink-soft">
+        상품 상세 글을 그대로 복사해 붙여 넣어도 돼요. 한국어도 되지만, LLM 키가 없으면 영어 초안에 채울 칸이 많이 남아요. 영어로 쓰면 바로 문장으로 들어가요.
+      </p>
       <label className="mt-4 block text-[13px] font-medium" htmlFor="m-name">
         제품 이름
       </label>
@@ -584,7 +586,8 @@ function ManualForm({ error, onSubmit }: { error: string; onSubmit: (m: { name: 
       </label>
       <textarea
         id="m-desc"
-        rows={6}
+        rows={8}
+        maxLength={8000}
         className="mt-1 w-full rounded border border-rule-strong bg-paper px-3 py-2 font-serif"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
