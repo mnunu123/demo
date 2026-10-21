@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+/* 원고 교정 팔레트: 종이, 잉크, 빨간 펜(광고 냄새), 형광펜(현지 표현), 파란 연필(직접 채울 칸) */
+:root {
+  --paper: #eef1f4;
+  --sheet: #ffffff;
+  --ink: #17202c;
+  --ink-soft: #566273;
+  --ink-faint: #8a95a3;
+  --rule: #d3d9e1;
+  --rule-strong: #b9c2ce;
+  --redpen: #c92a3e;
+  --redpen-wash: rgba(201, 42, 62, 0.09);
+  --hilite: #ffe14d;
+  --hilite-wash: rgba(255, 225, 77, 0.62);
+  --blue: #2f5bd3;
+  --blue-wash: rgba(47, 91, 211, 0.1);
+  --good: #1e7a55;
+  --good-wash: rgba(30, 122, 85, 0.1);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #10161f;
+    --sheet: #18202b;
+    --ink: #e6ebf2;
+    --ink-soft: #a3aebb;
+    --ink-faint: #75808e;
+    --rule: #2a3442;
+    --rule-strong: #3a4656;
+    --redpen: #ff7083;
+    --redpen-wash: rgba(255, 112, 131, 0.14);
+    --hilite: #e9cb3c;
+    --hilite-wash: rgba(233, 203, 60, 0.32);
+    --blue: #93acff;
+    --blue-wash: rgba(147, 172, 255, 0.14);
+    --good: #57c793;
+    --good-wash: rgba(87, 199, 147, 0.14);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-redpen: var(--redpen);
+  --color-redpen-wash: var(--redpen-wash);
+  --color-hilite: var(--hilite);
+  --color-hilite-wash: var(--hilite-wash);
+  --color-blue: var(--blue);
+  --color-blue-wash: var(--blue-wash);
+  --color-good: var(--good);
+  --color-good-wash: var(--good-wash);
+  --font-sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --font-pen: "Nanum Pen Script", "IBM Plex Sans KR", cursive;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.65;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--hilite-wash);
+  color: inherit;
+}
+
+/* 원고(교정지) */
+.sheet {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  box-shadow:
+    0 1px 0 var(--rule),
+    0 18px 40px -28px rgba(23, 32, 44, 0.35);
+}
+
+.manuscript {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.75;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* 교정 표시 */
+.mark-ad {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--redpen);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  background: var(--redpen-wash);
+  border-radius: 2px;
+}
+.mark-local {
+  background: var(--hilite-wash);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px transparent;
+}
+.mark-fill {
+  background: var(--blue-wash);
+  color: var(--blue);
+  border-radius: 3px;
+  outline: 1px dashed color-mix(in srgb, var(--blue) 55%, transparent);
+  outline-offset: -1px;
+}
+.mark-ad,
+.mark-local,
+.mark-fill {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* 편집기: 보이는 글자는 textarea, 표시는 뒤쪽 레이어 */
+.editor {
+  position: relative;
+}
+.editor-layer,
+.editor-input {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  white-space: pre-wrap;
+  word-break: normal;
+  overflow-wrap: break-word;
+  tab-size: 4;
+}
+.editor-layer {
+  color: transparent;
+  pointer-events: none;
+  min-height: 1.75em;
+}
+mark {
+  background: none;
+  color: inherit;
+}
+.editor-layer mark,
+.editor-layer .mark-fill {
+  color: transparent;
+}
+.editor-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ink);
+  caret-color: var(--ink);
+  outline: none;
+}
+.editor:focus-within {
+  box-shadow: 0 0 0 2px var(--blue-wash);
+  border-radius: 6px;
+}
+
+/* 빨간 펜 줄긋기 (첫 화면 한 번만) */
+.strike {
+  background-image: linear-gradient(var(--redpen), var(--redpen));
+  background-repeat: no-repeat;
+  background-position: 0 58%;
+  background-size: 100% 0.11em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .strike-animate {
+    animation: strike 0.9s cubic-bezier(0.6, 0, 0.3, 1) 0.5s both;
+  }
+  .note-animate {
+    animation: note-in 0.5s ease-out 1.3s both;
+  }
+}
+@keyframes strike {
+  from {
+    background-size: 0% 0.11em;
+  }
+  to {
+    background-size: 100% 0.11em;
+  }
+}
+@keyframes note-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) rotate(-2deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(-2deg);
+  }
+}
+
+.pen {
+  font-family: var(--font-pen);
+  color: var(--redpen);
+  line-height: 1.1;
+}
+
+/* 가로 스크롤 탭에서 스크롤바 숨기기 */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
